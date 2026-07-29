@@ -48,6 +48,9 @@ canvas.pitch{height:108px;max-height:108px}
 canvas.steps{height:82px;max-height:82px}canvas.volume-steps{height:84px;max-height:84px}
 .toggle{display:flex;gap:6px;align-items:center;font-size:14px}
 .controls{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-top:8px}.menu-wrap{position:relative}.menu-btn{width:44px;min-width:44px;font-size:22px;line-height:1}.popup-menu{position:absolute;right:0;bottom:48px;z-index:20;min-width:150px;padding:6px;background:var(--panel);border:1px solid var(--border);border-radius:12px}.popup-menu[hidden]{display:none}.popup-menu button{display:block;width:100%;min-height:40px;text-align:left;border:0;background:transparent;border-radius:8px;padding:8px 10px}.popup-menu button:active{background:var(--bg)}
+.menu-setting{padding:8px 10px;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.menu-setting label{display:block;margin-bottom:5px;font-size:12px;color:var(--muted)}
+.menu-setting select{width:100%;min-height:38px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);padding:6px}
 .controls button{min-height:40px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:11px;font:inherit;padding:6px}.tabs button{min-height:34px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:9px;font:inherit;font-size:12px;padding:4px 2px;white-space:nowrap}
 .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:8px}
 .tabs button.active{background:var(--accent);color:white;border-color:transparent;font-weight:700}.tabs button.muted{opacity:.48;text-decoration:line-through}.tabs button.active.muted{opacity:.62}
@@ -223,6 +226,13 @@ input[type=range]::-webkit-slider-thumb{
       <button id="saveBtn" type="button" role="menuitem">保存</button>
       <button id="loadBtn" type="button" role="menuitem">読み込み</button>
       <button id="exportWavBtn" type="button" role="menuitem">WAV書き出し</button>
+      <div class="menu-setting">
+        <label for="shortNoiseStartMode">短周期ノイズの開始</label>
+        <select id="shortNoiseStartMode">
+          <option value="reset">毎回リセット</option>
+          <option value="continue">実機同様に引き継ぐ</option>
+        </select>
+      </div>
       <button id="resetBtn" type="button" role="menuitem">初期化</button>
     </div>
   </div>
@@ -232,7 +242,7 @@ input[type=range]::-webkit-slider-thumb{
   <button id="playBtn">▶ 再生</button>
 </div>
 
-<div id="status" class="status">全チャンネルで音量／ゲートを最下段に揃えています。</div>
+<div id="status" class="status">3点メニューで短周期ノイズの開始方式を選べます。</div>
 
 <script>
 const lanes={};
@@ -466,6 +476,7 @@ function projectSnapshot(){
   return {
     lanes:laneData,
     duration:getDurationSeconds(),
+    shortNoiseStartMode:document.getElementById('shortNoiseStartMode').value,
     mutes:{
       square1:document.getElementById('square1Mute').checked,
       square2:document.getElementById('square2Mute').checked,
@@ -495,6 +506,8 @@ function restoreSnapshot(s){
     if(lanes[k]&&Array.isArray(v))lanes[k].values=v.slice();
   });
   if(s.duration!=null)setDurationSeconds(s.duration);
+  document.getElementById('shortNoiseStartMode').value=
+    s.shortNoiseStartMode==='continue'?'continue':'reset';
   const m=s.mutes||{};
   document.getElementById('square1Mute').checked=!!m.square1;
   document.getElementById('square2Mute').checked=!!m.square2;
@@ -627,8 +640,10 @@ function makeNoiseBuffer(ctx,len){
       const roughAtOn=1-lerpCurve(lanes.noiseRate.values,t);
       const lockedIndex=Math.max(0,Math.min(15,Math.round(roughAtOn*15)));
       lockedShortPeriod=NES_NOISE_PERIODS[lockedIndex];
-      lfsr=1;
-      timerCycles=0;
+      if(document.getElementById('shortNoiseStartMode').value==='reset'){
+        lfsr=1;
+        timerCycles=0;
+      }
     }
 
     let timerPeriod;
@@ -743,8 +758,10 @@ function renderNoiseLevels(ctx,len,muted){
       const roughAtOn=1-lerpCurve(lanes.noiseRate.values,t);
       const lockedIndex=Math.max(0,Math.min(15,Math.round(roughAtOn*15)));
       lockedShortPeriod=NES_NOISE_PERIODS[lockedIndex];
-      lfsr=1;
-      timerCycles=0;
+      if(document.getElementById('shortNoiseStartMode').value==='reset'){
+        lfsr=1;
+        timerCycles=0;
+      }
     }
 
     let timerPeriod;
@@ -879,6 +896,7 @@ function resetAll(){
   lanes.noiseVolume.values.fill(9/15);
   lanes.noiseRate.values.fill(8/15);
   lanes.noiseMode.values.fill(0);
+  document.getElementById('shortNoiseStartMode').value='reset';
   setDurationSeconds(.60);
   document.querySelectorAll('input[type=checkbox]').forEach(x=>x.checked=false);
   pushUndo(before);
@@ -1118,6 +1136,18 @@ document.getElementById('redoBtn').addEventListener('click',redo);
 document.getElementById('saveBtn').addEventListener('click',saveProject);
 document.getElementById('loadBtn').addEventListener('click',loadProject);
 document.getElementById('exportWavBtn').addEventListener('click',exportWav);
+
+let shortNoiseModeBeforeChange=null;
+document.getElementById('shortNoiseStartMode').addEventListener('pointerdown',()=>{
+  shortNoiseModeBeforeChange=projectSnapshot();
+});
+document.getElementById('shortNoiseStartMode').addEventListener('change',()=>{
+  if(shortNoiseModeBeforeChange)pushUndo(shortNoiseModeBeforeChange);
+  shortNoiseModeBeforeChange=null;
+  status.textContent=document.getElementById('shortNoiseStartMode').value==='continue'
+    ?'短周期ノイズを実機同様に引き継ぎます。'
+    :'短周期ノイズを毎回同じ位置から開始します。';
+});
 
 document.getElementById('menuBtn').addEventListener('click',e=>{
   e.stopPropagation();
