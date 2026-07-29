@@ -1,0 +1,1136 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Famicom SFX Automation</title>
+<style>
+:root{color-scheme:light dark;--bg:#f6f7f9;--panel:#fff;--text:#16181d;--muted:#6b7280;--border:#d9dde5;--accent:#2563eb}
+@media(prefers-color-scheme:dark){:root{--bg:#101217;--panel:#191c23;--text:#f4f5f7;--muted:#a6adbb;--border:#343946;--accent:#6ea8ff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:760px;margin:auto;padding:10px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px;margin-bottom:8px}
+.head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.head h2{font-size:17px;margin:0}
+.row{margin-top:8px}
+.label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+canvas{display:block;width:100%;height:84px;max-height:84px;border:1px solid var(--border);border-radius:12px;background:var(--panel);touch-action:none;user-select:none;-webkit-user-select:none}
+canvas.pitch{height:108px;max-height:108px}
+canvas.steps{height:82px;max-height:82px}canvas.volume-steps{height:84px;max-height:84px}
+.toggle{display:flex;gap:6px;align-items:center;font-size:14px}
+.controls{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-top:8px}.menu-wrap{position:relative}.menu-btn{width:44px;min-width:44px;font-size:22px;line-height:1}.popup-menu{position:absolute;right:0;bottom:48px;z-index:20;min-width:150px;padding:6px;background:var(--panel);border:1px solid var(--border);border-radius:12px}.popup-menu[hidden]{display:none}.popup-menu button{display:block;width:100%;min-height:40px;text-align:left;border:0;background:transparent;border-radius:8px;padding:8px 10px}.popup-menu button:active{background:var(--bg)}
+.controls button{min-height:40px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:11px;font:inherit;padding:6px}.tabs button{min-height:34px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:9px;font:inherit;font-size:12px;padding:4px 2px;white-space:nowrap}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:8px}
+.tabs button.active{background:var(--accent);color:white;border-color:transparent;font-weight:700}.tabs button.muted{opacity:.48;text-decoration:line-through}.tabs button.active.muted{opacity:.62}
+.transport{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.transport.single{grid-template-columns:1fr}
+.transport button{min-height:44px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:12px;font:inherit}
+#playBtn{background:var(--accent);color:white;border-color:transparent;font-weight:700;min-height:88px;font-size:18px}
+.status{border:1px solid var(--border);border-radius:12px;padding:8px;font-size:13px;margin-top:8px}
+.tabpanel{
+  height:390px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.tabpanel[hidden]{display:none}
+.tabpanel .head{flex:0 0 auto}
+.tabpanel .row{
+  flex:1 1 0;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+}
+.tabpanel .row canvas{
+  flex:1 1 auto;
+  min-height:0;
+  height:auto;
+  max-height:none;
+}
+#trianglePanel .row{
+  flex:1 1 50%;
+}
+input[type=range]{width:100%}
+.duration-wrap{position:relative}
+.duration-scale{
+  display:grid;
+  grid-template-columns:7.5fr 1fr .75fr .75fr;
+  gap:3px;
+  margin-top:5px;
+  font-size:11px;
+  color:var(--muted);
+  text-align:center;
+}
+.duration-scale span{
+  border-top:2px solid var(--border);
+  padding-top:3px;
+}
+.duration-scale span:first-child{
+  border-top-color:var(--accent);
+}
+.duration-scale span:nth-child(2){
+  border-top-style:dashed;
+}
+.duration-hint{
+  display:flex;
+  justify-content:space-between;
+  margin-top:2px;
+  font-size:10px;
+  color:var(--muted);
+}
+@media(max-width:420px){
+  .controls{grid-template-columns:1fr 1fr auto}
+}
+</style>
+
+  <meta name="theme-color" content="#111827">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Famicom SFX">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+</head>
+<body>
+<main>
+
+<section id="square1Panel" class="card tabpanel" role="tabpanel" aria-labelledby="square1Tab">
+  <div class="head">
+    <h2>Square 1</h2>
+    <label class="toggle"><input id="square1Mute" type="checkbox">ミュート</label>
+  </div>
+  <div class="row"><div class="label"><b>ピッチ</b></div><canvas id="square1Pitch" class="pitch"></canvas></div>
+  <div class="row"><div class="label"><b>音量</b></div><canvas id="square1Volume" class="volume-steps"></canvas></div>
+  <div class="row"><div class="label"><b>デューティー比</b></div><canvas id="square1Duty" class="steps"></canvas></div>
+</section>
+
+<section id="square2Panel" class="card tabpanel" role="tabpanel" aria-labelledby="square2Tab" hidden>
+  <div class="head">
+    <h2>Square 2</h2>
+    <label class="toggle"><input id="square2Mute" type="checkbox">ミュート</label>
+  </div>
+  <div class="row"><div class="label"><b>ピッチ</b></div><canvas id="square2Pitch" class="pitch"></canvas></div>
+  <div class="row"><div class="label"><b>音量</b></div><canvas id="square2Volume" class="volume-steps"></canvas></div>
+  <div class="row"><div class="label"><b>デューティー比</b></div><canvas id="square2Duty" class="steps"></canvas></div>
+</section>
+
+<section id="trianglePanel" class="card tabpanel" role="tabpanel" aria-labelledby="triangleTab" hidden>
+  <div class="head">
+    <h2>Triangle</h2>
+    <label class="toggle"><input id="triangleMute" type="checkbox">ミュート</label>
+  </div>
+  <div class="row"><div class="label"><b>ピッチ</b></div><canvas id="trianglePitch" class="pitch"></canvas></div>
+  <div class="row"><div class="label"><b>ゲート</b></div><canvas id="triangleGate" class="steps"></canvas></div>
+</section>
+
+<section id="noisePanel" class="card tabpanel" role="tabpanel" aria-labelledby="noiseTab" hidden>
+  <div class="head">
+    <h2>Noise</h2>
+    <label class="toggle"><input id="noiseMute" type="checkbox">ミュート</label>
+  </div>
+  <div class="row"><div class="label"><b>音量</b></div><canvas id="noiseVolume" class="volume-steps"></canvas></div>
+  <div class="row"><div class="label"><b>粗さ</b></div><canvas id="noiseRate" class="volume-steps"></canvas></div>
+  <div class="row"><div class="label"><b>通常／短周期</b></div><canvas id="noiseMode" class="steps"></canvas></div>
+</section>
+
+<section class="card">
+  <label>長さ <b id="durationText">0.60秒</b></label>
+  <div class="duration-wrap">
+    <input id="duration" type="range" min="0" max="1000" step="1" value="184"
+      aria-label="効果音の長さ">
+    <div class="duration-scale" aria-hidden="true">
+      <span>0.1〜2.0秒</span>
+      <span>2秒</span>
+      <span>3秒</span>
+      <span>4秒</span>
+    </div>
+    <div class="duration-hint" aria-hidden="true">
+      <span>細かく調整</span>
+      <span>余白</span>
+      <span>固定</span>
+    </div>
+  </div>
+</section>
+
+<div class="tabs" role="tablist" aria-label="チャンネル切り替え">
+  <button id="square1Tab" class="active" type="button" role="tab" aria-selected="true">Sq 1</button>
+  <button id="square2Tab" type="button" role="tab" aria-selected="false">Sq 2</button>
+  <button id="triangleTab" type="button" role="tab" aria-selected="false">Tri</button>
+  <button id="noiseTab" type="button" role="tab" aria-selected="false">Noise</button>
+</div>
+
+<div class="controls">
+  <button id="undoBtn" type="button">↶ Undo</button>
+  <button id="redoBtn" type="button">↷ Redo</button>
+  <div class="menu-wrap">
+    <button id="menuBtn" class="menu-btn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="その他の機能">…</button>
+    <div id="popupMenu" class="popup-menu" role="menu" hidden>
+      <button id="saveBtn" type="button" role="menuitem">保存</button>
+      <button id="loadBtn" type="button" role="menuitem">読み込み</button>
+      <button id="exportWavBtn" type="button" role="menuitem">WAV書き出し</button>
+      <button id="resetBtn" type="button" role="menuitem">初期化</button>
+    </div>
+  </div>
+</div>
+
+<div class="transport single">
+  <button id="playBtn">▶ 再生</button>
+</div>
+
+<div id="status" class="status">WAV書き出しではiPhoneの共有シートを開き、「ファイルに保存」を選べます。</div>
+
+<script>
+const lanes={};
+let playheadProgress=null;
+let playheadAnimation=null;
+let activeCtx=null;
+let currentTab='square1';
+let undoStack=[];
+let redoStack=[];
+let isRestoring=false;
+
+function createLane(id,count,initial,steps=0){
+  const c=document.getElementById(id);
+  const o={id,c,ctx:c.getContext('2d'),values:Array(count).fill(initial),drawing:false,last:null,steps,beforeDraw:null};
+  const quantize=v=>steps>1?Math.round(v*(steps-1))/(steps-1):v;
+
+  function resize(){
+    const r=c.getBoundingClientRect();
+    if(!r.width||!r.height)return;
+    const d=Math.min(window.devicePixelRatio||1,2);
+    c.width=Math.max(1,Math.round(r.width*d));
+    c.height=Math.max(1,Math.round(r.height*d));
+    o.ctx.setTransform(d,0,0,d,0,0);
+    drawLane(o);
+  }
+
+  function write(clientX,clientY){
+    const r=c.getBoundingClientRect();
+    const x=Math.max(0,Math.min(r.width,clientX-r.left));
+    const y=Math.max(0,Math.min(r.height,clientY-r.top));
+    const idx=Math.round(x/r.width*(o.values.length-1));
+    const val=quantize(Math.max(0,Math.min(1,1-y/r.height)));
+
+    if(o.last===null)o.values[idx]=val;
+    else{
+      const from=o.last,to=idx,start=o.values[from],n=Math.max(1,Math.abs(to-from));
+      for(let k=0;k<=n;k++){
+        const t=k/n,i=Math.round(from+(to-from)*t);
+        o.values[i]=quantize(start+(val-start)*t);
+      }
+    }
+    o.last=idx;
+    drawLane(o);
+  }
+
+  function begin(clientX,clientY){
+    o.beforeDraw=projectSnapshot();
+    o.drawing=true;
+    o.last=null;
+    write(clientX,clientY);
+  }
+
+  function finish(){
+    if(!o.drawing)return;
+    o.drawing=false;
+    o.last=null;
+    if(o.beforeDraw){
+      pushUndo(o.beforeDraw);
+      o.beforeDraw=null;
+    }
+  }
+
+  if(window.PointerEvent){
+    c.addEventListener('pointerdown',e=>{
+      begin(e.clientX,e.clientY);
+      c.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    });
+    c.addEventListener('pointermove',e=>{
+      if(o.drawing){write(e.clientX,e.clientY);e.preventDefault();}
+    });
+    c.addEventListener('pointerup',finish);
+    c.addEventListener('pointercancel',finish);
+  }else{
+    c.addEventListener('touchstart',e=>{
+      const t=e.touches[0];
+      if(t){begin(t.clientX,t.clientY);e.preventDefault();}
+    },{passive:false});
+    c.addEventListener('touchmove',e=>{
+      const t=e.touches[0];
+      if(t&&o.drawing){write(t.clientX,t.clientY);e.preventDefault();}
+    },{passive:false});
+    c.addEventListener('touchend',finish);
+    c.addEventListener('touchcancel',finish);
+  }
+
+  o.resize=resize;
+  requestAnimationFrame(resize);
+  return o;
+}
+
+function drawLane(o){
+  const r=o.c.getBoundingClientRect();
+  const x=o.ctx,w=r.width,h=r.height;
+  if(!w||!h)return;
+  const cs=getComputedStyle(document.documentElement);
+
+  x.clearRect(0,0,w,h);
+  x.strokeStyle=cs.getPropertyValue('--border');
+  x.lineWidth=1;
+
+  const rows=o.steps>1?o.steps:4;
+  for(let i=1;i<rows;i++){
+    x.beginPath();x.moveTo(0,h*i/rows);x.lineTo(w,h*i/rows);x.stroke();
+  }
+  for(let i=1;i<8;i++){
+    x.beginPath();x.moveTo(w*i/8,0);x.lineTo(w*i/8,h);x.stroke();
+  }
+
+  if(o.steps===16){
+    x.fillStyle=cs.getPropertyValue('--muted');
+    x.font='10px sans-serif';
+    x.textBaseline='middle';
+    x.fillText('15',4,7);
+    x.fillText('0',4,h-7);
+  }
+
+  if(o.steps===4){
+    const dutyLabels=['75%','50%','25%','12.5%'];
+    x.fillStyle=cs.getPropertyValue('--muted');
+    x.font='10px sans-serif';
+    x.textBaseline='middle';
+    dutyLabels.forEach((label,index)=>{
+      x.fillText(label,4,h*(index+.5)/4);
+    });
+  }
+
+  x.strokeStyle=cs.getPropertyValue('--accent');
+  x.lineWidth=3;
+  x.lineJoin='round';
+  x.lineCap='round';
+  x.beginPath();
+
+  o.values.forEach((v,i)=>{
+    const px=w*i/(o.values.length-1),py=h*(1-v);
+    if(i===0)x.moveTo(px,py);
+    else if(o.steps>1){
+      const prevY=h*(1-o.values[i-1]);
+      x.lineTo(px,prevY);
+      x.lineTo(px,py);
+    }else x.lineTo(px,py);
+  });
+  x.stroke();
+
+  if(playheadProgress!==null){
+    const px=Math.max(0,Math.min(1,playheadProgress))*w;
+    x.strokeStyle=cs.getPropertyValue('--text');
+    x.lineWidth=2;
+    x.beginPath();x.moveTo(px,0);x.lineTo(px,h);x.stroke();
+  }
+}
+
+lanes.square1Pitch=createLane('square1Pitch',128,.35);
+lanes.square1Volume=createLane('square1Volume',128,0,16);
+lanes.square1Duty=createLane('square1Duty',128,1/3,4);
+
+lanes.square2Pitch=createLane('square2Pitch',128,.42);
+lanes.square2Volume=createLane('square2Volume',128,0,16);
+lanes.square2Duty=createLane('square2Duty',128,2/3,4);
+
+lanes.trianglePitch=createLane('trianglePitch',128,.22);
+lanes.triangleGate=createLane('triangleGate',128,0,2);
+
+lanes.noiseVolume=createLane('noiseVolume',128,9/15,16);
+lanes.noiseRate=createLane('noiseRate',128,8/15,16);
+lanes.noiseMode=createLane('noiseMode',128,0,2);
+
+const duration=document.getElementById('duration');
+const durationText=document.getElementById('durationText');
+const status=document.getElementById('status');
+
+function sliderPositionToSeconds(position){
+  const p=Math.max(0,Math.min(1000,+position));
+
+  // Left 75%: continuously adjustable from 0.10 to 2.00 seconds.
+  if(p<=750){
+    const raw=.10+(p/750)*1.90;
+    return Math.round(raw/0.05)*0.05;
+  }
+
+  // Margin zone: keep 2.00 seconds, making the endpoint easy to select.
+  if(p<850)return 2;
+
+  // Right side: fixed 3- and 4-second zones.
+  if(p<925)return 3;
+  return 4;
+}
+
+function secondsToSliderPosition(seconds){
+  const s=+seconds;
+  if(s<2){
+    return Math.round(((Math.max(.10,s)-.10)/1.90)*750);
+  }
+  if(s===2)return 800;
+  if(s<=3)return 887;
+  return 963;
+}
+
+function getDurationSeconds(){
+  return sliderPositionToSeconds(duration.value);
+}
+
+function setDurationSeconds(seconds){
+  duration.value=secondsToSliderPosition(seconds);
+}
+
+const lerpCurve=(arr,t)=>{
+  const p=Math.max(0,Math.min(arr.length-1,t*(arr.length-1)));
+  const a=Math.floor(p),b=Math.min(arr.length-1,a+1),f=p-a;
+  return arr[a]+(arr[b]-arr[a])*f;
+};
+const nearestCurve=(arr,t)=>arr[Math.min(arr.length-1,Math.round(t*(arr.length-1)))];
+const NES_CPU_HZ=1789773;
+const drawnPitch=v=>65*Math.pow(2200/65,v);
+
+function pulseFrequencyFromCurve(v){
+  const wanted=drawnPitch(v);
+  const timer=Math.max(8,Math.min(2047,Math.round(NES_CPU_HZ/(16*wanted)-1)));
+  return NES_CPU_HZ/(16*(timer+1));
+}
+
+function triangleFrequencyFromCurve(v){
+  const wanted=drawnPitch(v);
+  const timer=Math.max(0,Math.min(2047,Math.round(NES_CPU_HZ/(32*wanted)-1)));
+  return NES_CPU_HZ/(32*(timer+1));
+}
+
+function projectSnapshot(){
+  const laneData={};
+  Object.entries(lanes).forEach(([k,l])=>laneData[k]=l.values.slice());
+  return {
+    lanes:laneData,
+    duration:getDurationSeconds(),
+    mutes:{
+      square1:document.getElementById('square1Mute').checked,
+      square2:document.getElementById('square2Mute').checked,
+      triangle:document.getElementById('triangleMute').checked,
+      noise:document.getElementById('noiseMute').checked
+    }
+  };
+}
+
+function snapshotsEqual(a,b){
+  return JSON.stringify(a)===JSON.stringify(b);
+}
+
+function pushUndo(snapshot){
+  if(isRestoring)return;
+  if(undoStack.length&&snapshotsEqual(undoStack[undoStack.length-1],snapshot))return;
+  undoStack.push(snapshot);
+  if(undoStack.length>40)undoStack.shift();
+  redoStack=[];
+  updateUndoButtons();
+}
+
+function restoreSnapshot(s){
+  if(!s)return;
+  isRestoring=true;
+  Object.entries(s.lanes||{}).forEach(([k,v])=>{
+    if(lanes[k]&&Array.isArray(v))lanes[k].values=v.slice();
+  });
+  if(s.duration!=null)setDurationSeconds(s.duration);
+  const m=s.mutes||{};
+  document.getElementById('square1Mute').checked=!!m.square1;
+  document.getElementById('square2Mute').checked=!!m.square2;
+  document.getElementById('triangleMute').checked=!!m.triangle;
+  document.getElementById('noiseMute').checked=!!m.noise;
+  updateDuration();
+  redrawAll();
+  Object.keys(channelMuteIds).forEach(updateTabMuteState);
+  isRestoring=false;
+}
+
+function updateUndoButtons(){
+  document.getElementById('undoBtn').disabled=undoStack.length===0;
+  document.getElementById('redoBtn').disabled=redoStack.length===0;
+}
+
+function undo(){
+  if(!undoStack.length)return;
+  const current=projectSnapshot();
+  const previous=undoStack.pop();
+  redoStack.push(current);
+  restoreSnapshot(previous);
+  updateUndoButtons();
+  status.textContent='1つ戻しました。';
+}
+
+function redo(){
+  if(!redoStack.length)return;
+  const current=projectSnapshot();
+  const next=redoStack.pop();
+  undoStack.push(current);
+  restoreSnapshot(next);
+  updateUndoButtons();
+  status.textContent='1つ進めました。';
+}
+
+function redrawAll(){
+  Object.values(lanes).forEach(drawLane);
+}
+
+function stopPlayhead(){
+  if(playheadAnimation!==null){
+    cancelAnimationFrame(playheadAnimation);
+    playheadAnimation=null;
+  }
+  playheadProgress=null;
+  redrawAll();
+}
+
+function startPlayhead(startTime,length,ctx){
+  if(playheadAnimation!==null)cancelAnimationFrame(playheadAnimation);
+  function frame(){
+    const elapsed=ctx.currentTime-startTime;
+    playheadProgress=Math.max(0,Math.min(1,elapsed/length));
+    redrawAll();
+    if(elapsed<length&&activeCtx===ctx)playheadAnimation=requestAnimationFrame(frame);
+    else{
+      playheadAnimation=null;
+      playheadProgress=null;
+      redrawAll();
+    }
+  }
+  playheadAnimation=requestAnimationFrame(frame);
+}
+
+function makeSquareBuffer(ctx,len,pitchLane,volumeLane,dutyLane){
+  const sr=ctx.sampleRate,b=ctx.createBuffer(1,Math.ceil(sr*len),sr),d=b.getChannelData(0);
+  const duties=[.125,.25,.5,.75];
+  let phase=0;
+  for(let i=0;i<d.length;i++){
+    const t=i/(d.length-1);
+    const freq=pulseFrequencyFromCurve(lerpCurve(pitchLane.values,t));
+    const duty=duties[Math.round(nearestCurve(dutyLane.values,t)*3)];
+    phase=(phase+freq/sr)%1;
+    d[i]=(phase<duty?1:-1)*lerpCurve(volumeLane.values,t)*.24;
+  }
+  return b;
+}
+
+function makeTriangleBuffer(ctx,len){
+  const sr=ctx.sampleRate;
+  const b=ctx.createBuffer(1,Math.ceil(sr*len),sr);
+  const d=b.getChannelData(0);
+
+  // NES 2A03 triangle sequencer:
+  // 15,14,...,1,0,0,1,...,14,15 (32 steps)
+  const sequence=[
+    15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,
+    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+  ];
+
+  let stepPhase=0;
+  let sequenceIndex=0;
+
+  for(let i=0;i<d.length;i++){
+    const t=i/(d.length-1);
+    const freq=triangleFrequencyFromCurve(lerpCurve(lanes.trianglePitch.values,t));
+    const gate=nearestCurve(lanes.triangleGate.values,t)>=.5;
+
+    // One full waveform cycle contains 32 sequencer steps.
+    // When gated off, the real channel holds its current sequencer position.
+    if(gate){
+      stepPhase+=freq*32/sr;
+      while(stepPhase>=1){
+        stepPhase-=1;
+        sequenceIndex=(sequenceIndex+1)&31;
+      }
+    }
+
+    // Center 0..15 around zero. Gate-off is silenced in the app mixer,
+    // while preserving the sequence position for the next gate-on.
+    const sample=(sequence[sequenceIndex]-7.5)/7.5;
+    d[i]=gate?sample*.28:0;
+  }
+  return b;
+}
+
+const NES_NOISE_PERIODS=[4,8,16,32,64,96,128,160,202,254,380,508,762,1016,2034,4068];
+
+function makeNoiseBuffer(ctx,len){
+  const sr=ctx.sampleRate,b=ctx.createBuffer(1,Math.ceil(sr*len),sr),d=b.getChannelData(0);
+  let lfsr=1,timerCycles=0,wasShort=false,lockedShortPeriod=NES_NOISE_PERIODS[8];
+  const cpuCyclesPerSample=NES_CPU_HZ/sr;
+
+  for(let i=0;i<d.length;i++){
+    const t=i/(d.length-1);
+    const shortMode=nearestCurve(lanes.noiseMode.values,t)>=.5;
+
+    if(shortMode&&!wasShort){
+      const roughAtOn=1-lerpCurve(lanes.noiseRate.values,t);
+      const lockedIndex=Math.max(0,Math.min(15,Math.round(roughAtOn*15)));
+      lockedShortPeriod=NES_NOISE_PERIODS[lockedIndex];
+      lfsr=1;
+      timerCycles=0;
+    }
+
+    let timerPeriod;
+    if(shortMode)timerPeriod=lockedShortPeriod;
+    else{
+      const rough=1-lerpCurve(lanes.noiseRate.values,t);
+      const periodIndex=Math.max(0,Math.min(15,Math.round(rough*15)));
+      timerPeriod=NES_NOISE_PERIODS[periodIndex];
+    }
+
+    timerCycles+=cpuCyclesPerSample;
+    while(timerCycles>=timerPeriod){
+      timerCycles-=timerPeriod;
+      const tap=shortMode?6:1;
+      const feedback=(lfsr&1)^((lfsr>>tap)&1);
+      lfsr=(lfsr>>1)|(feedback<<14);
+    }
+
+    const output=(lfsr&1)?0:1;
+    d[i]=(output*2-1)*lerpCurve(lanes.noiseVolume.values,t)*.25;
+    wasShort=shortMode;
+  }
+  return b;
+}
+
+
+function renderPulseLevels(ctx,len,pitchLane,volumeLane,dutyLane,muted){
+  const sr=ctx.sampleRate;
+  const count=Math.ceil(sr*len);
+  const out=new Float32Array(count);
+  if(muted)return out;
+
+  // The four NES pulse sequencer patterns.
+  const dutySequences=[
+    [0,1,0,0,0,0,0,0],
+    [0,1,1,0,0,0,0,0],
+    [0,1,1,1,1,0,0,0],
+    [1,0,0,1,1,1,1,1]
+  ];
+
+  let stepPhase=0;
+  let sequenceIndex=0;
+
+  for(let i=0;i<count;i++){
+    const t=count>1?i/(count-1):0;
+    const freq=pulseFrequencyFromCurve(lerpCurve(pitchLane.values,t));
+    const volume=Math.max(0,Math.min(15,Math.round(lerpCurve(volumeLane.values,t)*15)));
+    const dutyIndex=Math.max(0,Math.min(3,Math.round(nearestCurve(dutyLane.values,t)*3)));
+
+    stepPhase+=freq*8/sr;
+    while(stepPhase>=1){
+      stepPhase-=1;
+      sequenceIndex=(sequenceIndex+1)&7;
+    }
+
+    out[i]=dutySequences[dutyIndex][sequenceIndex]?volume:0;
+  }
+  return out;
+}
+
+function renderTriangleLevels(ctx,len,muted){
+  const sr=ctx.sampleRate;
+  const count=Math.ceil(sr*len);
+  const out=new Float32Array(count);
+  if(muted)return out;
+
+  const sequence=[
+    15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,
+    0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15
+  ];
+
+  let stepPhase=0;
+  let sequenceIndex=0;
+
+  for(let i=0;i<count;i++){
+    const t=count>1?i/(count-1):0;
+    const freq=triangleFrequencyFromCurve(lerpCurve(lanes.trianglePitch.values,t));
+    const gate=nearestCurve(lanes.triangleGate.values,t)>=.5;
+
+    if(gate){
+      stepPhase+=freq*32/sr;
+      while(stepPhase>=1){
+        stepPhase-=1;
+        sequenceIndex=(sequenceIndex+1)&31;
+      }
+      out[i]=sequence[sequenceIndex];
+    }else{
+      // Keep the sequencer position, but silence the channel in this editor.
+      out[i]=0;
+    }
+  }
+  return out;
+}
+
+function renderNoiseLevels(ctx,len,muted){
+  const sr=ctx.sampleRate;
+  const count=Math.ceil(sr*len);
+  const out=new Float32Array(count);
+  if(muted)return out;
+
+  let lfsr=1;
+  let timerCycles=0;
+  let wasShort=false;
+  let lockedShortPeriod=NES_NOISE_PERIODS[8];
+  const cpuCyclesPerSample=NES_CPU_HZ/sr;
+
+  for(let i=0;i<count;i++){
+    const t=count>1?i/(count-1):0;
+    const shortMode=nearestCurve(lanes.noiseMode.values,t)>=.5;
+
+    if(shortMode&&!wasShort){
+      const roughAtOn=1-lerpCurve(lanes.noiseRate.values,t);
+      const lockedIndex=Math.max(0,Math.min(15,Math.round(roughAtOn*15)));
+      lockedShortPeriod=NES_NOISE_PERIODS[lockedIndex];
+      lfsr=1;
+      timerCycles=0;
+    }
+
+    let timerPeriod;
+    if(shortMode){
+      timerPeriod=lockedShortPeriod;
+    }else{
+      const rough=1-lerpCurve(lanes.noiseRate.values,t);
+      const periodIndex=Math.max(0,Math.min(15,Math.round(rough*15)));
+      timerPeriod=NES_NOISE_PERIODS[periodIndex];
+    }
+
+    timerCycles+=cpuCyclesPerSample;
+    while(timerCycles>=timerPeriod){
+      timerCycles-=timerPeriod;
+      const tap=shortMode?6:1;
+      const feedback=(lfsr&1)^((lfsr>>tap)&1);
+      lfsr=(lfsr>>1)|(feedback<<14);
+    }
+
+    const volume=Math.max(0,Math.min(15,Math.round(lerpCurve(lanes.noiseVolume.values,t)*15)));
+    out[i]=(lfsr&1)?0:volume;
+    wasShort=shortMode;
+  }
+  return out;
+}
+
+function makeNesMixedBuffer(ctx,len){
+  const sr=ctx.sampleRate;
+  const count=Math.ceil(sr*len);
+  const buffer=ctx.createBuffer(1,count,sr);
+  const out=buffer.getChannelData(0);
+
+  const p1=renderPulseLevels(
+    ctx,len,
+    lanes.square1Pitch,
+    lanes.square1Volume,
+    lanes.square1Duty,
+    document.getElementById('square1Mute').checked
+  );
+  const p2=renderPulseLevels(
+    ctx,len,
+    lanes.square2Pitch,
+    lanes.square2Volume,
+    lanes.square2Duty,
+    document.getElementById('square2Mute').checked
+  );
+  const tri=renderTriangleLevels(
+    ctx,len,
+    document.getElementById('triangleMute').checked
+  );
+  const noise=renderNoiseLevels(
+    ctx,len,
+    document.getElementById('noiseMute').checked
+  );
+
+  // NES APU nonlinear mixer approximation.
+  // DMC is not implemented yet, so its contribution is zero.
+  let previousInput=0;
+  let previousOutput=0;
+  const dcBlockR=.995;
+
+  for(let i=0;i<count;i++){
+    const pulseSum=p1[i]+p2[i];
+    const pulseOut=pulseSum===0
+      ?0
+      :95.88/(8128/pulseSum+100);
+
+    const tndInput=tri[i]/8227+noise[i]/12241;
+    const tndOut=tndInput===0
+      ?0
+      :159.79/(1/tndInput+100);
+
+    const mixed=pulseOut+tndOut;
+
+    // The console output path removes DC. This simple blocker prevents
+    // a large positive offset while retaining the nonlinear interaction.
+    const highPassed=mixed-previousInput+dcBlockR*previousOutput;
+    previousInput=mixed;
+    previousOutput=highPassed;
+
+    out[i]=Math.max(-1,Math.min(1,highPassed*2.2));
+  }
+
+  return buffer;
+}
+
+async function playSound(){
+  const AC=window.AudioContext||window.webkitAudioContext;
+  stopPlayhead();
+  if(activeCtx){try{await activeCtx.close()}catch(e){}}
+  const ctx=new AC();
+  activeCtx=ctx;
+  if(ctx.state==='suspended')await ctx.resume();
+
+  const len=getDurationSeconds();
+  const start=ctx.currentTime+.04;
+
+  const source=ctx.createBufferSource();
+  source.buffer=makeNesMixedBuffer(ctx,len);
+
+  const master=ctx.createGain();
+  master.gain.value=.95;
+  source.connect(master);
+  master.connect(ctx.destination);
+  source.start(start);
+
+  status.textContent='実機風の非線形ミキサーで再生中…';
+  startPlayhead(start,len,ctx);
+
+  setTimeout(()=>{
+    status.textContent='再生完了。';
+    if(activeCtx===ctx){
+      stopPlayhead();
+      ctx.close();
+      activeCtx=null;
+    }
+  },(len+.08)*1000);
+}
+
+function resetAll(){
+  closeMenu();
+  const before=projectSnapshot();
+  stopPlayhead();
+  lanes.square1Pitch.values.fill(.35);
+  lanes.square1Volume.values.fill(0);
+  lanes.square1Duty.values.fill(1/3);
+  lanes.square2Pitch.values.fill(.42);
+  lanes.square2Volume.values.fill(0);
+  lanes.square2Duty.values.fill(2/3);
+  lanes.trianglePitch.values.fill(.22);
+  lanes.triangleGate.values.fill(0);
+  lanes.noiseVolume.values.fill(9/15);
+  lanes.noiseRate.values.fill(8/15);
+  lanes.noiseMode.values.fill(0);
+  setDurationSeconds(.60);
+  document.querySelectorAll('input[type=checkbox]').forEach(x=>x.checked=false);
+  pushUndo(before);
+  updateDuration();
+  redrawAll();
+  status.textContent='初期化しました。';
+}
+
+function closeMenu(){
+  const menu=document.getElementById('popupMenu');
+  const btn=document.getElementById('menuBtn');
+  menu.hidden=true;
+  btn.setAttribute('aria-expanded','false');
+}
+
+function saveProject(){
+  try{
+    localStorage.setItem('famicomSfxProjectV12',JSON.stringify(projectSnapshot()));
+    status.textContent='この端末に保存しました。';
+    closeMenu();
+  }catch(e){
+    status.textContent='保存できませんでした。Code Editorのプレビュー設定を確認してください。';
+  }
+}
+
+function loadProject(){
+  try{
+    const raw=localStorage.getItem('famicomSfxProjectV12');
+    if(!raw){
+      status.textContent='保存データがありません。';
+      return;
+    }
+    const before=projectSnapshot();
+    restoreSnapshot(JSON.parse(raw));
+    pushUndo(before);
+    status.textContent='保存データを読み込みました。';
+    closeMenu();
+  }catch(e){
+    status.textContent='読み込みに失敗しました。';
+  }
+}
+
+
+const channelMuteIds={
+  square1:'square1Mute',
+  square2:'square2Mute',
+  triangle:'triangleMute',
+  noise:'noiseMute'
+};
+
+function updateTabMuteState(channel){
+  const checkbox=document.getElementById(channelMuteIds[channel]);
+  const tab=document.getElementById(channel+'Tab');
+  if(!checkbox||!tab)return;
+  tab.classList.toggle('muted',checkbox.checked);
+  tab.setAttribute('aria-label',tab.textContent.trim()+(checkbox.checked?'、ミュート中':''));
+}
+
+function toggleChannelMute(channel){
+  const checkbox=document.getElementById(channelMuteIds[channel]);
+  if(!checkbox)return;
+
+  const before=projectSnapshot();
+  checkbox.checked=!checkbox.checked;
+  pushUndo(before);
+  updateTabMuteState(channel);
+  status.textContent=(checkbox.checked?'ミュート：':'ミュート解除：')+channel;
+}
+
+const lastChannelTap={};
+function handleChannelTabTap(channel){
+  const now=performance.now();
+  const previous=lastChannelTap[channel]||0;
+  selectTab(channel);
+
+  if(now-previous<330){
+    lastChannelTap[channel]=0;
+    toggleChannelMute(channel);
+  }else{
+    lastChannelTap[channel]=now;
+  }
+}
+
+
+function audioBufferToWavBlob(audioBuffer){
+  const channels=1;
+  const sampleRate=audioBuffer.sampleRate;
+  const samples=audioBuffer.getChannelData(0);
+  const bytesPerSample=2;
+  const blockAlign=channels*bytesPerSample;
+  const byteRate=sampleRate*blockAlign;
+  const dataSize=samples.length*bytesPerSample;
+
+  const arrayBuffer=new ArrayBuffer(44+dataSize);
+  const view=new DataView(arrayBuffer);
+
+  function writeString(offset,text){
+    for(let i=0;i<text.length;i++){
+      view.setUint8(offset+i,text.charCodeAt(i));
+    }
+  }
+
+  writeString(0,'RIFF');
+  view.setUint32(4,36+dataSize,true);
+  writeString(8,'WAVE');
+  writeString(12,'fmt ');
+  view.setUint32(16,16,true);
+  view.setUint16(20,1,true);
+  view.setUint16(22,channels,true);
+  view.setUint32(24,sampleRate,true);
+  view.setUint32(28,byteRate,true);
+  view.setUint16(32,blockAlign,true);
+  view.setUint16(34,16,true);
+  writeString(36,'data');
+  view.setUint32(40,dataSize,true);
+
+  let offset=44;
+  for(let i=0;i<samples.length;i++){
+    const sample=Math.max(-1,Math.min(1,samples[i]));
+    const pcm=sample<0?sample*0x8000:sample*0x7fff;
+    view.setInt16(offset,Math.round(pcm),true);
+    offset+=2;
+  }
+
+  return new Blob([arrayBuffer],{type:'audio/wav'});
+}
+
+async function exportWav(){
+  closeMenu();
+  const AC=window.AudioContext||window.webkitAudioContext;
+  let ctx=null;
+  let url=null;
+
+  try{
+    status.textContent='WAVを書き出しています…';
+
+    ctx=new AC();
+    if(ctx.state==='suspended')await ctx.resume();
+
+    const len=getDurationSeconds();
+    const buffer=makeNesMixedBuffer(ctx,len);
+    const blob=audioBufferToWavBlob(buffer);
+
+    const now=new Date();
+    const stamp=[
+      now.getFullYear(),
+      String(now.getMonth()+1).padStart(2,'0'),
+      String(now.getDate()).padStart(2,'0'),
+      '-',
+      String(now.getHours()).padStart(2,'0'),
+      String(now.getMinutes()).padStart(2,'0'),
+      String(now.getSeconds()).padStart(2,'0')
+    ].join('');
+
+    const filename='famicom-sfx-'+stamp+'.wav';
+    const file=new File([blob],filename,{type:'audio/wav'});
+
+    if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+      await navigator.share({
+        files:[file],
+        title:'ファミコン効果音',
+        text:'作成したWAVファイル'
+      });
+      status.textContent='共有シートを開きました。';
+      return;
+    }
+
+    // Fallback 1: open the generated WAV directly.
+    url=URL.createObjectURL(blob);
+    const opened=window.open(url,'_blank');
+
+    if(opened){
+      status.textContent='WAVを開きました。共有または「ファイルに保存」を選んでください。';
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      url=null;
+      return;
+    }
+
+    // Fallback 2: ordinary download link.
+    const link=document.createElement('a');
+    link.href=url;
+    link.download=filename;
+    link.style.display='none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    status.textContent='WAVの保存を開始しました。';
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    url=null;
+  }catch(error){
+    console.error(error);
+
+    if(error && error.name==='AbortError'){
+      status.textContent='WAVの共有をキャンセルしました。';
+    }else{
+      status.textContent='WAVを保存できませんでした。このプレビューでは共有機能が制限されている可能性があります。';
+    }
+  }finally{
+    if(url){
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+    }
+    if(ctx){
+      try{await ctx.close()}catch(e){}
+    }
+  }
+}
+
+function selectTab(tab){
+  currentTab=tab;
+  const map={
+    square1:'square1Panel',
+    square2:'square2Panel',
+    triangle:'trianglePanel',
+    noise:'noisePanel'
+  };
+  Object.entries(map).forEach(([k,id])=>{
+    const active=k===tab;
+    document.getElementById(id).hidden=!active;
+    const btn=document.getElementById(k+'Tab');
+    btn.classList.toggle('active',active);
+    btn.setAttribute('aria-selected',String(active));
+  });
+  requestAnimationFrame(()=>{
+    Object.values(lanes).forEach(l=>{
+      if(!l.c.closest('[hidden]'))l.resize();
+    });
+  });
+}
+
+function updateDuration(){
+  durationText.textContent=getDurationSeconds().toFixed(2)+'秒';
+}
+
+document.getElementById('playBtn').addEventListener('click',playSound);
+document.getElementById('resetBtn').addEventListener('click',resetAll);
+document.getElementById('undoBtn').addEventListener('click',undo);
+document.getElementById('redoBtn').addEventListener('click',redo);
+document.getElementById('saveBtn').addEventListener('click',saveProject);
+document.getElementById('loadBtn').addEventListener('click',loadProject);
+document.getElementById('exportWavBtn').addEventListener('click',exportWav);
+
+document.getElementById('menuBtn').addEventListener('click',e=>{
+  e.stopPropagation();
+  const menu=document.getElementById('popupMenu');
+  const open=menu.hidden;
+  menu.hidden=!open;
+  e.currentTarget.setAttribute('aria-expanded',String(open));
+});
+
+document.addEventListener('click',e=>{
+  const wrap=e.target.closest('.menu-wrap');
+  if(!wrap)closeMenu();
+});
+
+document.getElementById('square1Tab').addEventListener('click',()=>handleChannelTabTap('square1'));
+document.getElementById('square2Tab').addEventListener('click',()=>handleChannelTabTap('square2'));
+document.getElementById('triangleTab').addEventListener('click',()=>handleChannelTabTap('triangle'));
+document.getElementById('noiseTab').addEventListener('click',()=>handleChannelTabTap('noise'));
+
+duration.addEventListener('pointerdown',()=>duration.dataset.before=JSON.stringify(projectSnapshot()));
+duration.addEventListener('change',()=>{
+  if(duration.dataset.before){
+    pushUndo(JSON.parse(duration.dataset.before));
+    delete duration.dataset.before;
+  }
+});
+duration.addEventListener('input',()=>{
+  const p=+duration.value;
+
+  if(p>750 && p<850){
+    duration.value=800;
+  }else if(p>=850 && p<925){
+    duration.value=887;
+  }else if(p>=925){
+    duration.value=963;
+  }
+
+  updateDuration();
+});
+
+['square1Mute','square2Mute','triangleMute','noiseMute'].forEach(id=>{
+  document.getElementById(id).addEventListener('change',e=>{
+    const channel=id.replace('Mute','');
+    const snapshot=projectSnapshot();
+    snapshot.mutes[channel]=!e.target.checked;
+    pushUndo(snapshot);
+    updateTabMuteState(channel);
+  });
+});
+
+window.addEventListener('resize',()=>Object.values(lanes).forEach(l=>l.resize()));
+
+selectTab('square1');
+Object.keys(channelMuteIds).forEach(updateTabMuteState);
+updateDuration();
+updateUndoButtons();
+</script>
+</main>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(error => {
+      console.warn('Service worker registration failed:', error);
+    });
+  });
+}
+</script>
+</body>
+</html>
