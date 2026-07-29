@@ -127,8 +127,8 @@ input[type=range]{width:100%}
     <label class="toggle"><input id="square1Mute" type="checkbox">ミュート</label>
   </div>
   <div class="row"><div class="label"><b>ピッチ</b></div><canvas id="square1Pitch" class="pitch"></canvas></div>
-  <div class="row"><div class="label"><b>音量</b></div><canvas id="square1Volume" class="volume-steps"></canvas></div>
   <div class="row"><div class="label"><b>デューティー比</b></div><canvas id="square1Duty" class="steps"></canvas></div>
+  <div class="row"><div class="label"><b>音量</b></div><canvas id="square1Volume" class="volume-steps"></canvas></div>
 </section>
 
 <section id="square2Panel" class="card tabpanel" role="tabpanel" aria-labelledby="square2Tab" hidden>
@@ -137,8 +137,8 @@ input[type=range]{width:100%}
     <label class="toggle"><input id="square2Mute" type="checkbox">ミュート</label>
   </div>
   <div class="row"><div class="label"><b>ピッチ</b></div><canvas id="square2Pitch" class="pitch"></canvas></div>
-  <div class="row"><div class="label"><b>音量</b></div><canvas id="square2Volume" class="volume-steps"></canvas></div>
   <div class="row"><div class="label"><b>デューティー比</b></div><canvas id="square2Duty" class="steps"></canvas></div>
+  <div class="row"><div class="label"><b>音量</b></div><canvas id="square2Volume" class="volume-steps"></canvas></div>
 </section>
 
 <section id="trianglePanel" class="card tabpanel" role="tabpanel" aria-labelledby="triangleTab" hidden>
@@ -155,9 +155,9 @@ input[type=range]{width:100%}
     <h2>Noise</h2>
     <label class="toggle"><input id="noiseMute" type="checkbox">ミュート</label>
   </div>
-  <div class="row"><div class="label"><b>音量</b></div><canvas id="noiseVolume" class="volume-steps"></canvas></div>
   <div class="row"><div class="label"><b>粗さ</b></div><canvas id="noiseRate" class="volume-steps"></canvas></div>
   <div class="row"><div class="label"><b>通常／短周期</b></div><canvas id="noiseMode" class="steps"></canvas></div>
+  <div class="row"><div class="label"><b>音量</b></div><canvas id="noiseVolume" class="volume-steps"></canvas></div>
 </section>
 
 <section class="card">
@@ -204,7 +204,7 @@ input[type=range]{width:100%}
   <button id="playBtn">▶ 再生</button>
 </div>
 
-<div id="status" class="status">WAV書き出しではiPhoneの共有シートを開き、「ファイルに保存」を選べます。</div>
+<div id="status" class="status">全チャンネルで音量／ゲートを最下段に揃えています。</div>
 
 <script>
 const lanes={};
