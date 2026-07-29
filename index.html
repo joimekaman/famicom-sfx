@@ -137,6 +137,25 @@ input[type=range]::-webkit-slider-thumb{
 @media(max-width:420px){
   .controls{grid-template-columns:1fr 1fr auto}
 }
+
+button,
+input,
+select,
+label,
+.tabs button,
+.menu-btn,
+.popup-menu,
+.popup-menu button,
+#playBtn{
+  pointer-events:auto;
+  touch-action:manipulation;
+}
+
+canvas{
+  pointer-events:auto;
+  touch-action:none;
+}
+
 </style>
 
   <meta name="theme-color" content="#111827">
@@ -1187,29 +1206,6 @@ updateUndoButtons();
 </script>
 </main>
 
-
-<script>
-(() => {
-  // Prevent Safari/PWA pinch zoom and gesture zoom.
-  for (const eventName of ['gesturestart', 'gesturechange', 'gestureend']) {
-    document.addEventListener(eventName, event => event.preventDefault(), { passive: false });
-  }
-
-  document.addEventListener('touchmove', event => {
-    if (event.touches && event.touches.length > 1) {
-      event.preventDefault();
-    }
-  }, { passive: false });
-
-  document.addEventListener('dblclick', event => {
-    event.preventDefault();
-  }, { passive: false });
-
-  // Keep the standalone app pinned to the top.
-  window.addEventListener('load', () => window.scrollTo(0, 0));
-  window.addEventListener('resize', () => window.scrollTo(0, 0));
-})();
-</script>
 
 <script>
 if ('serviceWorker' in navigator) {

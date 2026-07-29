@@ -1,4 +1,4 @@
-const CACHE_NAME = 'famicom-sfx-v8';
+const CACHE_NAME = 'famicom-sfx-v9';
 const ASSETS = [
   './',
   './index.html',
