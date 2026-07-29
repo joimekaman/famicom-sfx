@@ -14,7 +14,7 @@ html,body{
   margin:0;
   overflow:hidden;
   overscroll-behavior:none;
-  touch-action:none;
+  touch-action:manipulation;
 }
 body{
   position:fixed;
@@ -79,6 +79,34 @@ canvas.steps{height:82px;max-height:82px}canvas.volume-steps{height:84px;max-hei
   flex:1 1 50%;
 }
 input[type=range]{width:100%}
+
+button,
+input[type=range],
+.tab,
+#playBtn{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+
+canvas{
+  touch-action:none;
+}
+
+input[type=range]{
+  min-height:44px;
+  margin:0;
+  padding:10px 0;
+}
+
+input[type=range]::-webkit-slider-thumb{
+  width:28px;
+  height:28px;
+}
+
+#playBtn{
+  min-height:92px;
+}
+
 .duration-wrap{position:relative}
 .duration-scale{
   display:grid;
