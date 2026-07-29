@@ -2,14 +2,42 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Famicom SFX Automation</title>
 <style>
 :root{color-scheme:light dark;--bg:#f6f7f9;--panel:#fff;--text:#16181d;--muted:#6b7280;--border:#d9dde5;--accent:#2563eb}
 @media(prefers-color-scheme:dark){:root{--bg:#101217;--panel:#191c23;--text:#f4f5f7;--muted:#a6adbb;--border:#343946;--accent:#6ea8ff}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-main{max-width:760px;margin:auto;padding:10px}
+html,body{
+  width:100%;
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  overscroll-behavior:none;
+  touch-action:none;
+}
+body{
+  position:fixed;
+  inset:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  -webkit-text-size-adjust:100%;
+  user-select:none;
+  -webkit-user-select:none;
+}
+main{
+  width:100%;
+  height:100%;
+  max-width:760px;
+  margin:auto;
+  overflow:hidden;
+  padding:
+    calc(10px + env(safe-area-inset-top))
+    calc(10px + env(safe-area-inset-right))
+    calc(10px + env(safe-area-inset-bottom))
+    calc(10px + env(safe-area-inset-left));
+}
 .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:10px;margin-bottom:8px}
 .head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .head h2{font-size:17px;margin:0}
@@ -85,7 +113,7 @@ input[type=range]{width:100%}
 
   <meta name="theme-color" content="#111827">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="Famicom SFX">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./icon-192.png">
@@ -982,9 +1010,7 @@ async function exportWav(){
 
     if(navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
       await navigator.share({
-        files:[file],
-        title:'ファミコン効果音',
-        text:'作成したWAVファイル'
+        files:[file]
       });
       status.textContent='共有シートを開きました。';
       return;
@@ -1122,6 +1148,40 @@ updateDuration();
 updateUndoButtons();
 </script>
 </main>
+
+
+<script>
+(() => {
+  // Prevent Safari/PWA pinch zoom and gesture zoom.
+  for (const eventName of ['gesturestart', 'gesturechange', 'gestureend']) {
+    document.addEventListener(eventName, event => event.preventDefault(), { passive: false });
+  }
+
+  document.addEventListener('touchmove', event => {
+    if (event.touches && event.touches.length > 1) {
+      event.preventDefault();
+    }
+  }, { passive: false });
+
+  // Prevent double-tap zoom without interfering with the app's own tab logic.
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', event => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 350) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, { passive: false });
+
+  document.addEventListener('dblclick', event => {
+    event.preventDefault();
+  }, { passive: false });
+
+  // Keep the standalone app pinned to the top.
+  window.addEventListener('load', () => window.scrollTo(0, 0));
+  window.addEventListener('resize', () => window.scrollTo(0, 0));
+})();
+</script>
 
 <script>
 if ('serviceWorker' in navigator) {
