@@ -1136,18 +1136,6 @@ document.getElementById('saveBtn').addEventListener('click',saveProject);
 document.getElementById('loadBtn').addEventListener('click',loadProject);
 document.getElementById('exportWavBtn').addEventListener('click',exportWav);
 
-let shortNoiseModeBeforeChange=null;
-document.getElementById('shortNoiseStartMode').addEventListener('pointerdown',()=>{
-  shortNoiseModeBeforeChange=projectSnapshot();
-});
-document.getElementById('shortNoiseStartMode').addEventListener('change',()=>{
-  if(shortNoiseModeBeforeChange)pushUndo(shortNoiseModeBeforeChange);
-  shortNoiseModeBeforeChange=null;
-  status.textContent=document.getElementById('shortNoiseStartMode').value==='continue'
-    ?'短周期ノイズを実機同様に引き継ぎます。'
-    :'短周期ノイズを毎回同じ位置から開始します。';
-});
-
 document.getElementById('menuBtn').addEventListener('click',e=>{
   e.stopPropagation();
   const menu=document.getElementById('popupMenu');
